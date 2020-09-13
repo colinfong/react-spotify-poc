@@ -14,17 +14,19 @@ TODO:
 -Inspect the .bind line
 -Create general architecture
 -When do I actually need semicolons? function name?
+-camel vs snake case
 
 -Paginate on >20 playlist pages
+- Dry up URL promises
 */
 
 
 // Application client ID, redirect URI, and scopes
-const clientId = process.env.REACT_APP_CLIENT_ID;
+const clientId = "";
 const redirectUri = "http://localhost:3000";
 const scopes = [
   "user-read-currently-playing",
-  "user-read-playback-state",
+  "user-read-playback-state"
 ];
 
 //Get the hash of the url
@@ -96,10 +98,10 @@ class App extends Component {
     })
   }
 
-  getUserPlaylists(token, id) {
+  getUserPlaylists(token, userId) {
     return new Promise((resolve,reject) => {
       $.ajax({
-        url: `https://api.spotify.com/v1/users/${id}/playlists`,
+        url: `https://api.spotify.com/v1/users/${userId}/playlists`,
         type: "GET",
         beforeSend: (xhr) => {
           xhr.setRequestHeader("Authorization", "Bearer " + token);
@@ -115,12 +117,64 @@ class App extends Component {
     })
   }
 
+  getPlaylistTracks(token, playlistId) {
+    return new Promise((resolve,reject) => {
+      $.ajax({
+        url: `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
+        type: "GET",
+        beforeSend: (xhr) => {
+          xhr.setRequestHeader("Authorization", "Bearer " + token);
+        },
+        success: (data) => {
+          console.log(data)
+          resolve(data)
+        },
+        error: (error) => {
+          reject(error)
+        }
+      })
+    })
+  }
+
+  getArtistGenre(token, artistId) {
+    return new Promise((resolve,reject) => {
+      $.ajax({
+        url: `https://api.spotify.com/v1/artists/${artistId}`,
+        type: "GET",
+        beforeSend: (xhr) => {
+          xhr.setRequestHeader("Authorization", "Bearer " + token);
+        },
+        success: (data) => {
+          console.log(data)
+          resolve(data)
+        },
+        error: (error) => {
+          reject(error)
+        }
+      })
+    })
+  }
+
+  getArtistGenres(token, tracks) {
+    Promise.all(
+      tracks.map(async (track) => {
+        const artistId = track["artists"][0]
+        const artistData = await this.getArtistGenre(token, artistId)
+        console.log(artistData)
+      })
+    )
+  }
+
   async getCurUser(token) {
-    let v, c
+    let v, c, g
     v = await this.getCurrentUser(token)
     c = await this.getUserPlaylists(token, v)
-    return c["items"][0]["id"]
+    g = await this.getPlaylistTracks(token, c["items"][0]["id"])
+    console.log("here")
+    console.log(g["items"][0]["track"]["artists"][0]["id"])
+    //return c["items"][0]["id"]
   }
+
 
 
   getCurrentlyPlaying(token) {
