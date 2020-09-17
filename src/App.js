@@ -17,6 +17,7 @@ TODO:
 -camel vs snake case
 
 -Paginate on >20 playlist pages
+-Paginate on playlist songs
 - Dry up URL promises
 */
 
@@ -145,7 +146,6 @@ class App extends Component {
           xhr.setRequestHeader("Authorization", "Bearer " + token);
         },
         success: (data) => {
-          console.log(data)
           resolve(data)
         },
         error: (error) => {
@@ -156,23 +156,36 @@ class App extends Component {
   }
 
   getArtistGenres(token, tracks) {
-    Promise.all(
+    return Promise.all(
       tracks.map(async (track) => {
-        const artistId = track["artists"][0]
-        const artistData = await this.getArtistGenre(token, artistId)
-        console.log(artistData)
+        const artistId = track["track"]["artists"][0]["id"]
+        return await this.getArtistGenre(token, artistId)
       })
     )
   }
 
+  genreCount(artists) {
+    let genres = new Map()
+    for (var artist of artists) {
+      console.log(Object.values(artist["genres"]))
+      for (var genre in Object.values(artist["genres"])) {
+        console.log(genre)
+        if (!(genre in genres)) {
+          genres[genre] = 0
+        }
+        genres[genre] += 1
+      }
+    }
+    return genres
+  }
+
   async getCurUser(token) {
-    let v, c, g
+    let v, c, g, r
     v = await this.getCurrentUser(token)
     c = await this.getUserPlaylists(token, v)
     g = await this.getPlaylistTracks(token, c["items"][0]["id"])
-    console.log("here")
-    console.log(g["items"][0]["track"]["artists"][0]["id"])
-    //return c["items"][0]["id"]
+    r = await this.getArtistGenres(token, g["items"])
+    console.log(this.genreCount(r))
   }
 
 
