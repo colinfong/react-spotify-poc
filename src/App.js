@@ -80,6 +80,7 @@ class App extends Component {
     console.log(this.getCurUser(_token));
   }
 
+  // Get the user's id for playlists
   getCurrentUser(token) {
     return new Promise((resolve,reject) => {
       $.ajax({
@@ -99,6 +100,7 @@ class App extends Component {
     })
   }
 
+  // Use the user's id to get their playlists
   getUserPlaylists(token, userId) {
     return new Promise((resolve,reject) => {
       $.ajax({
@@ -118,6 +120,7 @@ class App extends Component {
     })
   }
 
+  // Use a playlist id to get its tracks
   getPlaylistTracks(token, playlistId) {
     return new Promise((resolve,reject) => {
       $.ajax({
@@ -137,7 +140,8 @@ class App extends Component {
     })
   }
 
-  getArtistGenre(token, artistId) {
+  // Use an artistId from tracks to get data on the artist
+  getArtist(token, artistId) {
     return new Promise((resolve,reject) => {
       $.ajax({
         url: `https://api.spotify.com/v1/artists/${artistId}`,
@@ -155,28 +159,44 @@ class App extends Component {
     })
   }
 
+  // Take a list of tracks and get their top artist's genres
   getArtistGenres(token, tracks) {
     return Promise.all(
+      // Create an array of all artists
       tracks.map(async (track) => {
         const artistId = track["track"]["artists"][0]["id"]
-        return await this.getArtistGenre(token, artistId)
+        return await this.getArtist(token, artistId)
       })
     )
   }
 
+  // Takes a list of artists and extracts their associated genres
+  // into a map
   genreCount(artists) {
     let genres = new Map()
+    let count = 0
     for (var artist of artists) {
-      console.log(Object.values(artist["genres"]))
-      for (var genre in Object.values(artist["genres"])) {
-        console.log(genre)
-        if (!(genre in genres)) {
-          genres[genre] = 0
+      console.log(artist["genres"].values())
+      const iter = artist["genres"].values()
+      let result = iter.next()
+      while (!result.done) {
+        console.log(result.value)
+        if (!(result.value in genres)) {
+          genres[result.value] = 0
         }
-        genres[genre] += 1
+        genres[result.value] += 1
+        count += 1
+        result = iter.next()
       }
     }
-    return genres
+    return [genres, count]
+  }
+  
+  // Takes a list of map of genres and counts and turns those cunts into percentages
+  genrePercentage(genres, count) {
+    for (var genre of genres) {
+      var curCount = 
+    }
   }
 
   async getCurUser(token) {
