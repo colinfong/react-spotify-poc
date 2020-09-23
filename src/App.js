@@ -176,36 +176,47 @@ class App extends Component {
     let genres = new Map()
     let count = 0
     for (var artist of artists) {
-      console.log(artist["genres"].values())
       const iter = artist["genres"].values()
       let result = iter.next()
       while (!result.done) {
-        console.log(result.value)
         if (!(result.value in genres)) {
-          genres[result.value] = 0
+          genres.set(result.value, 0)
         }
-        genres[result.value] += 1
+        genres.set(result.value, genres.get(result.value) + 1)
         count += 1
         result = iter.next()
       }
     }
+    console.log("here")
+    console.log(genres)
+    console.log(genres["trap soul"])
     return [genres, count]
   }
   
   // Takes a list of map of genres and counts and turns those cunts into percentages
   genrePercentage(genres, count) {
-    for (var genre of genres) {
-      var curCount = 
+    for (var key in genres){
+      genres[key] = genres[key]/count
+      console.log( key, genres[key] );
     }
   }
 
+  async getPlaylistGenerePerc(token, playlistId) {
+    let tracks, genres, count, percentages
+    tracks = await this.getPlaylistTracks(token, playlistId)
+    genres = await this.getArtistGenres(token, tracks["items"])
+    count = await this.genreCount(genres)
+    percentages = await this.genrePercentage(count[0], count[1])
+  }
+
   async getCurUser(token) {
-    let v, c, g, r
+    let v, c, g, r, q
     v = await this.getCurrentUser(token)
     c = await this.getUserPlaylists(token, v)
     g = await this.getPlaylistTracks(token, c["items"][0]["id"])
     r = await this.getArtistGenres(token, g["items"])
-    console.log(this.genreCount(r))
+    q = await this.genreCount(r)
+    this.genrePercentage(q[0], q[1])
   }
 
 
