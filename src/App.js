@@ -17,6 +17,7 @@ TODO:
 -camel vs snake case
 
 -Paginate on >20 playlist pages
+  - I only get 21 playlists total?
 -Paginate on playlist songs
 - Dry up URL promises
 */
@@ -90,7 +91,6 @@ class App extends Component {
           xhr.setRequestHeader("Authorization", "Bearer " + token);
         },
         success: (data) => {
-          console.log(data.id);
           resolve(data.id)
         },
         error: function (error) {
@@ -101,17 +101,17 @@ class App extends Component {
   }
 
   // Use the user's id to get their playlists
-  getUserPlaylists(token, userId) {
+  getUserPlaylistIds(token, userId) {
     return new Promise((resolve,reject) => {
       $.ajax({
-        url: `https://api.spotify.com/v1/users/${userId}/playlists`,
+        url: `https://api.spotify.com/v1/users/${userId}/playlists?limit=20`,
         type: "GET",
         beforeSend: (xhr) => {
           xhr.setRequestHeader("Authorization", "Bearer " + token);
         },
         success: (data) => {
-          // console.log(data)
-          resolve(data)
+          console.log(data)
+          resolve(data["items"])
         },
         error: (error) => {
           reject(error)
@@ -187,9 +187,6 @@ class App extends Component {
         result = iter.next()
       }
     }
-    // console.log("here")
-    // console.log(genres)
-    // console.log(genres["trap soul"])
     return [genres, count]
   }
   
@@ -211,12 +208,22 @@ class App extends Component {
     return percentages
   }
 
+  getAllPlaylistGenrePerc(token, playlistIds) {
+    return Promise.all(
+      playlistIds.map(async (playlist) => {
+        const playlistId = playlist["id"]
+        return await [playlist["name"], this.getPlaylistGenerePerc(token, playlistId)]
+      })
+    )
+  }
+
   async getCurUser(token) {
-    let v, c, g //, r, q
-    v = await this.getCurrentUser(token)
-    c = await this.getUserPlaylists(token, v)
-    g = await this.getPlaylistGenerePerc(token, c["items"][0]["id"])
-    console.log(g)
+    let userId, playlistIds, percentages
+    userId = await this.getCurrentUser(token)
+    playlistIds = await this.getUserPlaylistIds(token, userId)
+    // percentages = await this.getPlaylistGenerePerc(token, playlists[0]["id"])
+    percentages = await this.getAllPlaylistGenrePerc(token, playlistIds)
+    console.log(percentages)
   }
 
 
