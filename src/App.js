@@ -110,7 +110,7 @@ class App extends Component {
           xhr.setRequestHeader("Authorization", "Bearer " + token);
         },
         success: (data) => {
-          console.log(data)
+          // console.log(data)
           resolve(data)
         },
         error: (error) => {
@@ -130,7 +130,7 @@ class App extends Component {
           xhr.setRequestHeader("Authorization", "Bearer " + token);
         },
         success: (data) => {
-          console.log(data)
+          // console.log(data)
           resolve(data)
         },
         error: (error) => {
@@ -187,18 +187,19 @@ class App extends Component {
         result = iter.next()
       }
     }
-    console.log("here")
-    console.log(genres)
-    console.log(genres["trap soul"])
+    // console.log("here")
+    // console.log(genres)
+    // console.log(genres["trap soul"])
     return [genres, count]
   }
   
   // Takes a list of map of genres and counts and turns those cunts into percentages
   genrePercentage(genres, count) {
-    for (var key in genres){
-      genres[key] = genres[key]/count
-      console.log( key, genres[key] );
+    console.log(count)
+    for (let [key, value] of genres) {
+      genres.set(key, value/count)
     }
+    return genres
   }
 
   async getPlaylistGenerePerc(token, playlistId) {
@@ -207,16 +208,15 @@ class App extends Component {
     genres = await this.getArtistGenres(token, tracks["items"])
     count = await this.genreCount(genres)
     percentages = await this.genrePercentage(count[0], count[1])
+    return percentages
   }
 
   async getCurUser(token) {
-    let v, c, g, r, q
+    let v, c, g //, r, q
     v = await this.getCurrentUser(token)
     c = await this.getUserPlaylists(token, v)
-    g = await this.getPlaylistTracks(token, c["items"][0]["id"])
-    r = await this.getArtistGenres(token, g["items"])
-    q = await this.genreCount(r)
-    this.genrePercentage(q[0], q[1])
+    g = await this.getPlaylistGenerePerc(token, c["items"][0]["id"])
+    console.log(g)
   }
 
 
