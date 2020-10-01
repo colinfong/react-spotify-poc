@@ -18,13 +18,13 @@ TODO:
 
 -Paginate on >20 playlist pages
   - I only get 21 playlists total?
+-Paginate on getArtist Tracks (max 100)
 -Paginate on playlist songs
 - Dry up URL promises
 */
 
-
 // Application client ID, redirect URI, and scopes
-const clientId = "";
+const clientId = ";";
 const redirectUri = "http://localhost:3000";
 const scopes = [
   "user-read-currently-playing",
@@ -158,14 +158,52 @@ class App extends Component {
       })
     })
   }
-
+  // Use 50 artist ids max in an API call
+  getArtists(token, artistIds) {
+    return new Promise((resolve,reject) => {
+      var url = 'https://api.spotify.com/v1/artists?ids='
+      var comp = ""
+      console.log(artistIds)
+      for (var i = 0; i < artistIds.length; i++) {
+        if (i === 0) {
+          comp = artistIds[i]
+        } else {
+          comp = comp.concat(",", artistIds[i])
+        }
+      }
+      $.ajax({
+        url: url.concat(encodeURIComponent(comp)),
+        type: "GET",
+        beforeSend: (xhr) => {
+          xhr.setRequestHeader("Authorization", "Bearer " + token);
+        },
+        success: (data) => {
+          console.log(data)
+          resolve(data)
+        },
+        error: (error) => {
+          reject(error)
+        }
+      })
+    })
+  }
+  
   // Take a list of tracks and get their top artist's genres
-  getArtistGenres(token, tracks) {
+  async getArtistGenres(token, tracks) {
+    console.log(tracks.length)
+    var limit = 50
+    var artistBatches = [[]]
+    tracks.forEach((track) => {
+      if(artistBatches[limit/50 - 1].length == 50) {
+        limit += 50
+        artistBatches.push([])
+      }
+      artistBatches[limit/50 - 1].push(track["track"]["artists"][0]["id"])
+    })
+    
     return Promise.all(
-      // Create an array of all artists
-      tracks.map(async (track) => {
-        const artistId = track["track"]["artists"][0]["id"]
-        return await this.getArtist(token, artistId)
+      artistBatches.map(async (batch) => {
+        return await this.getArtists(token, batch)
       })
     )
   }
@@ -203,9 +241,9 @@ class App extends Component {
     let tracks, genres, count, percentages
     tracks = await this.getPlaylistTracks(token, playlistId)
     genres = await this.getArtistGenres(token, tracks["items"])
-    count = await this.genreCount(genres)
-    percentages = await this.genrePercentage(count[0], count[1])
-    return percentages
+    // count = await this.genreCount(genres)
+    // percentages = await this.genrePercentage(count[0], count[1])
+    // return percentages
   }
 
   getAllPlaylistGenrePerc(token, playlistIds) {
@@ -223,7 +261,6 @@ class App extends Component {
     playlistIds = await this.getUserPlaylistIds(token, userId)
     // percentages = await this.getPlaylistGenerePerc(token, playlists[0]["id"])
     percentages = await this.getAllPlaylistGenrePerc(token, playlistIds)
-    console.log(percentages)
   }
 
 
