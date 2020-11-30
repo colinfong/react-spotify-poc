@@ -24,7 +24,7 @@ TODO:
 */
 
 // Application client ID, redirect URI, and scopes
-const clientId = ";";
+const clientId = "";
 const redirectUri = "http://localhost:3000";
 const scopes = [
   "user-read-currently-playing",
@@ -187,25 +187,15 @@ class App extends Component {
       })
     })
   }
-  
-  // Take a list of tracks and get their top artist's genres
-  async getArtistGenres(token, tracks) {
-    console.log(tracks.length)
-    var limit = 50
-    var artistBatches = [[]]
-    tracks.forEach((track) => {
-      if(artistBatches[limit/50 - 1].length == 50) {
-        limit += 50
-        artistBatches.push([])
-      }
-      artistBatches[limit/50 - 1].push(track["track"]["artists"][0]["id"])
-    })
-    
-    return Promise.all(
-      artistBatches.map(async (batch) => {
-        return await this.getArtists(token, batch)
-      })
-    )
+
+
+  // Takes a list of map of genres and counts and turns those cunts into percentages
+  genrePercentage(genres, count) {
+    console.log(count)
+    for (let [key, value] of genres) {
+      genres.set(key, value/count)
+    }
+    return genres
   }
 
   // Takes a list of artists and extracts their associated genres
@@ -225,34 +215,74 @@ class App extends Component {
         result = iter.next()
       }
     }
-    return [genres, count]
+    return this.genrePercentage(genres, count)
   }
   
-  // Takes a list of map of genres and counts and turns those cunts into percentages
-  genrePercentage(genres, count) {
-    console.log(count)
-    for (let [key, value] of genres) {
-      genres.set(key, value/count)
-    }
-    return genres
+  // Take a list of tracks and get their top artist's genres
+  async getArtistGenres(token, tracks) {
+    console.log(tracks.length)
+    var limit = 50
+    var artistBatches = [[]]
+    tracks.forEach((track) => {
+      if(artistBatches[limit/50 - 1].length == 50) {
+        limit += 50
+        artistBatches.push([])
+      }
+      artistBatches[limit/50 - 1].push(track["track"]["artists"][0]["id"])
+    })
+    
+
+    //Need to turn this array of 50 artists per item back to an array of all artists
+    return Promise.all(
+      artistBatches.map(async (batch) => {
+        const artists = await this.getArtists(token, batch)
+        // return this.genreCount(artists)
+        return artists
+      })
+    )
   }
 
-  async getPlaylistGenerePerc(token, playlistId) {
-    let tracks, genres, count, percentages
+  async getPlaylistGenrePerc(token, playlistId) {
+    let tracks, genres, percentage
     tracks = await this.getPlaylistTracks(token, playlistId)
     genres = await this.getArtistGenres(token, tracks["items"])
-    // count = await this.genreCount(genres)
-    // percentages = await this.genrePercentage(count[0], count[1])
-    // return percentages
+    return await this.genreCount(genres)
   }
 
   getAllPlaylistGenrePerc(token, playlistIds) {
     return Promise.all(
       playlistIds.map(async (playlist) => {
         const playlistId = playlist["id"]
-        return await [playlist["name"], this.getPlaylistGenerePerc(token, playlistId)]
+        return await [playlist["name"], this.getPlaylistGenrePerc(token, playlistId)]
       })
     )
+  }
+  
+
+  getAllPlaylistTracks(token, playlistIds) {
+    return Promise.all(
+      playlistIds.map(async (playlist) =>{
+        const playlistId = playlist["id"]
+        return await this.getPlaylistTracks(token, playlistId)
+      })
+    )
+  }
+
+  comparePop(trackA, trackB) {
+    let popA = trackA["track"]["popularity"]
+    let popB = trackB["track"]["popularity"]
+    if(popA < popB) {
+      return -1
+    }
+    if(popA > popB) {
+      return 1
+    }
+    return 0
+  }
+
+  getTop10(tracks) {
+    tracks.sort(this.comparePop)
+    return tracks
   }
 
   async getCurUser(token) {
@@ -260,7 +290,8 @@ class App extends Component {
     userId = await this.getCurrentUser(token)
     playlistIds = await this.getUserPlaylistIds(token, userId)
     // percentages = await this.getPlaylistGenerePerc(token, playlists[0]["id"])
-    percentages = await this.getAllPlaylistGenrePerc(token, playlistIds)
+    percentages = await this.getAllPlaylistTracks(token, playlistIds)
+    console.log(this.getTop10(percentages[0]["items"]))
   }
 
 
