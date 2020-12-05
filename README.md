@@ -29,7 +29,7 @@ Design Considerations:
 -Node for...
 
 Reflection:
-* Project idea originally began as an app to recommend what playlists to sort songs into from uncategorized 'Liked Songs'. I found there was too much variation in users' decisions of where to put songs and the method I used(recommending playlists by similar genere to an uncategorized song) was too simplistic and the app doesn't save very much effort for a user to do that themselves. In addition, a UI for these recommendations would just clutter the user with decisions of where to put songs. Looking to solve a real problem, I found that I hesitate to share my music because I know it's quite eclectic and opted to use Spotify's popularity rating of songs to make that decision easier.
+* Project idea started as an app to recommend what playlists to sort songs into from 'Liked Songs'. I found there was too much variation in users' decisions of where to put songs and the method I used(recommending playlists by similar genere to an uncategorized song) was too simplistic and would not save very much effort for a user over doing that themselves. In addition, a UI for these recommendations would just clutter the user with decisions of where to put songs. Looking to solve a real problem, I found that I hesitate to play my playlists when I feel it's too eclectic for the room and opted to use Spotify's popularity rating of songs to make that decision easier.
 
 * ES6 is nice because...
 
