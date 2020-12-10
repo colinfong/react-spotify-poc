@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-//import hash from "./hash";
 import logo from './logo.svg';
 import './App.css';
 import { render } from "@testing-library/react";
@@ -24,7 +23,7 @@ TODO:
 */
 
 // Application client ID, redirect URI, and scopes
-const clientId = "";
+const clientId = process.env.REACT_APP_SPOTIFY_API_KEY;
 const redirectUri = "http://localhost:3000";
 const scopes = [
   "user-read-currently-playing",
@@ -285,13 +284,25 @@ class App extends Component {
     return tracks
   }
 
+
+  printTrackPop(tracks) {
+    let pop = ""
+    tracks.forEach(function (value) {
+      pop = pop.concat(value["track"]["name"] + ": " + value["track"]["popularity"], "\n")
+    })
+    return pop
+  } 
+
   async getCurUser(token) {
     let userId, playlistIds, percentages
     userId = await this.getCurrentUser(token)
     playlistIds = await this.getUserPlaylistIds(token, userId)
     // percentages = await this.getPlaylistGenerePerc(token, playlists[0]["id"])
     percentages = await this.getAllPlaylistTracks(token, playlistIds)
-    console.log(this.getTop10(percentages[0]["items"]))
+    // console.log(this.getTop10(percentages[0]["items"]))
+    this.setState({
+      wow: this.printTrackPop(this.getTop10(percentages[0]["items"]))
+    })
   }
 
 
@@ -317,7 +328,8 @@ class App extends Component {
           item: data.item,
           is_playing: data.is_playing,
           progress_ms: data.progress_ms,
-          no_data: false
+          no_data: false,
+          wow: ""
         });
       }
     });
@@ -344,6 +356,7 @@ class App extends Component {
             item={this.state.item}
             is_playing={this.state.is_playing}
             progress_ms={this.progress_ms}
+            wow={this.state.wow}
           />
         )}
         {this.state.no_data && (

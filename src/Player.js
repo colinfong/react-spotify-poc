@@ -20,9 +20,7 @@ const Player = props => {
                     <div className="now-playing__name">{props.item.name}</div>
                     <div className="now-playing__artist">
                         {props.is_playing ? "Playing" : "Paused"}
-                    </div>
-                    <div className="now-playing__status">
-                        {props.is_plaing ? "Playing" : "Paused"}
+                        {props.wow}
                     </div>
                     <div className="progress">
                         <div
