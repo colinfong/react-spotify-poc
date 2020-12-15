@@ -75,9 +75,8 @@ class App extends Component {
         token: _token
       })
     }
-    this.getCurrentlyPlaying(_token);
-    console.log("wow")
-    console.log(this.getCurUser(_token));
+    this.getCurrentlyPlaying(_token)
+    this.getCurUser(_token)
   }
 
   // Get the user's id for playlists
@@ -279,29 +278,28 @@ class App extends Component {
     return 0
   }
 
-  getTop10(tracks) {
+  orderTracksByPop(tracks) {
     tracks.sort(this.comparePop)
     return tracks
   }
 
 
   printTrackPop(tracks) {
-    let pop = ""
+    let orderedPop = []
     tracks.forEach(function (value) {
-      pop = pop.concat(value["track"]["name"] + ": " + value["track"]["popularity"], "\n")
+      orderedPop.push([value["track"]["name"], value["track"]["popularity"]])
     })
-    return pop
+    return orderedPop
   } 
 
   async getCurUser(token) {
     let userId, playlistIds, percentages
     userId = await this.getCurrentUser(token)
     playlistIds = await this.getUserPlaylistIds(token, userId)
-    // percentages = await this.getPlaylistGenerePerc(token, playlists[0]["id"])
     percentages = await this.getAllPlaylistTracks(token, playlistIds)
-    // console.log(this.getTop10(percentages[0]["items"]))
+    console.log(this.printTrackPop(this.orderTracksByPop(percentages[0]["items"])))
     this.setState({
-      wow: this.printTrackPop(this.getTop10(percentages[0]["items"]))
+      songs: this.printTrackPop(this.orderTracksByPop(percentages[0]["items"]))
     })
   }
 
@@ -329,7 +327,7 @@ class App extends Component {
           is_playing: data.is_playing,
           progress_ms: data.progress_ms,
           no_data: false,
-          wow: ""
+          songs: ""
         });
       }
     });
@@ -356,7 +354,7 @@ class App extends Component {
             item={this.state.item}
             is_playing={this.state.is_playing}
             progress_ms={this.progress_ms}
-            wow={this.state.wow}
+            songs={this.state.songs}
           />
         )}
         {this.state.no_data && (
