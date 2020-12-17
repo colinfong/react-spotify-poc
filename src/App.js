@@ -297,7 +297,6 @@ class App extends Component {
     userId = await this.getCurrentUser(token)
     playlistIds = await this.getUserPlaylistIds(token, userId)
     percentages = await this.getAllPlaylistTracks(token, playlistIds)
-    console.log(this.printTrackPop(this.orderTracksByPop(percentages[0]["items"])))
     this.setState({
       songs: this.printTrackPop(this.orderTracksByPop(percentages[0]["items"]))
     })
@@ -336,6 +335,7 @@ class App extends Component {
 
 
   render() {
+    console.log(this.state)
     return ( 
       <div className="App">
         <header className="App-header">

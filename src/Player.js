@@ -10,6 +10,8 @@ const Player = props => {
         width: (props.progress_ms * 100 / props.item.duration_ms) + `%`
     };
 
+    const orderedSongs = props.songs[0];
+
     return (
         <div className = "App">
             <div className="main-wrapper">
@@ -20,8 +22,7 @@ const Player = props => {
                     <div className="now-playing__name">{props.item.name}</div>
                     <div className="now-playing__artist">
                         {props.is_playing ? "Playing" : "Paused"}
-                        <br/>
-                        {typeof props.songs}
+                        {orderedSongs}
                     </div>
                     <div className="progress">
                         <div
