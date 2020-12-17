@@ -33,3 +33,4 @@ Reflection:
 
 * ES6 is nice because...
 
+Spotify player react code forked from: https://github.com/JoeKarlsson/react-spotify-player
