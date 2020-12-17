@@ -3,7 +3,7 @@ An application used to filter your Spotify playlists for their most popular song
 
 ## Project Status
 
-Proof of concept completed. Application is able to authenticate with a user's Spotify account(with implicit grant flow), retreieve their playlists, and order songs by their popularity.
+Proof of concept completed. Application is able to authenticate with a user's Spotify account(with implicit grant flow), retreieve their playlists, and order songs in their first playlist by their popularity.
 
 Next steps are to move the logic to the backend in Node and create a simple UI
 
@@ -20,9 +20,9 @@ Start server:
 
 Visit App:
 Run `http://localhost:3000` in your browser. 
-
-TODO: Login details
-TODO: app details
+Start playing a Spotify song(Note: Application will not work without a song playing)
+Authenticate
+Boom! You should see one of your playlists' songs in the order of least played to most played.
 
 Design Considerations:
 -React for...
