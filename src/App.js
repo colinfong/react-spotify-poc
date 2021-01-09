@@ -5,6 +5,7 @@ import { render } from "@testing-library/react";
 
 import * as $ from "jquery";
 import Player from "./Player";
+import Playlist from "./Playlists"
 
 export const authEndpoint = 'https://accounts.spotify.com/authorize';
 
@@ -349,14 +350,11 @@ class App extends Component {
             Login to spotify
           </a>
         )}
-        {this.state.token && !this.state.no_data && (
-          <Player
-            item={this.state.item}
-            is_playing={this.state.is_playing}
-            progress_ms={this.progress_ms}
-            songs={this.state.songs}
+        {
+          <Playlist
+            playlists={this.state.songs}
           />
-        )}
+        }
         {this.state.no_data && (
           <p>
             You need to be playing a song on Spotify for something to appear here.

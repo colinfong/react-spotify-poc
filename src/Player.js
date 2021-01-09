@@ -10,7 +10,7 @@ const Player = props => {
         width: (props.progress_ms * 100 / props.item.duration_ms) + `%`
     };
 
-    const orderedSongs = props.songs[0];
+    const orderedSongs = props.songs;
 
     return (
         <div className = "App">
