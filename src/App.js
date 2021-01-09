@@ -6,6 +6,7 @@ import { render } from "@testing-library/react";
 import * as $ from "jquery";
 import Player from "./Player";
 import Playlist from "./Playlists"
+import Songs from './Songs';
 
 export const authEndpoint = 'https://accounts.spotify.com/authorize';
 
@@ -62,12 +63,9 @@ class App extends Component {
       progress_ms: 0,
       no_data: false,
     };
-    console.log("Attempting to call player API")
-    //this.getCurrentlyPlaying = this.getCurrentlyPlaying.bind(this);
-    console.log("finished calling API")
   }
 
-  componentDidMount() {
+  async componentDidMount() {
     //Set token
     let _token = urlHash.access_token;
     if (_token) {
@@ -76,8 +74,22 @@ class App extends Component {
         token: _token
       })
     }
+    let userId, playlistIds, percentages
+
     this.getCurrentlyPlaying(_token)
-    this.getCurUser(_token)
+    userId = await this.getCurUserID(_token)
+    playlistIds = await this.getUserPlaylistIds(_token, userId)
+    // console.log(playlistIds)
+    // console.log(this.getPlaylistsNames(playlistIds))
+    
+    this.setState({
+      playlists: this.getPlaylistsNames(playlistIds)
+    })
+
+    percentages = await this.getAllPlaylistTracks(_token, playlistIds)
+    this.setState({
+      songs: this.printTrackPop(this.orderTracksByPop(percentages[0]["items"]))
+    })
   }
 
   // Get the user's id for playlists
@@ -109,7 +121,6 @@ class App extends Component {
           xhr.setRequestHeader("Authorization", "Bearer " + token);
         },
         success: (data) => {
-          console.log(data)
           resolve(data["items"])
         },
         error: (error) => {
@@ -117,6 +128,10 @@ class App extends Component {
         }
       })
     })
+  }
+
+  getPlaylistsNames(playlistIds) {
+    return playlistIds.map(playlistData => playlistData["name"])
   }
 
   // Use a playlist id to get its tracks
@@ -293,14 +308,10 @@ class App extends Component {
     return orderedPop
   } 
 
-  async getCurUser(token) {
-    let userId, playlistIds, percentages
+  async getCurUserID(token) {
+    let userId
     userId = await this.getCurrentUser(token)
-    playlistIds = await this.getUserPlaylistIds(token, userId)
-    percentages = await this.getAllPlaylistTracks(token, playlistIds)
-    this.setState({
-      songs: this.printTrackPop(this.orderTracksByPop(percentages[0]["items"]))
-    })
+    return userId
   }
 
 
@@ -321,7 +332,6 @@ class App extends Component {
           });
           return;
         }
-        console.log(data);
         this.setState({
           item: data.item,
           is_playing: data.is_playing,
@@ -336,7 +346,6 @@ class App extends Component {
 
 
   render() {
-    console.log(this.state)
     return ( 
       <div className="App">
         <header className="App-header">
@@ -352,7 +361,12 @@ class App extends Component {
         )}
         {
           <Playlist
-            playlists={this.state.songs}
+            playlists={this.state.playlists}
+          />
+        }
+        {
+          <Songs
+            songs={this.state.songs}
           />
         }
         {this.state.no_data && (
