@@ -1,5 +1,5 @@
 import React from "react";
-import "./Player.css";
+import "../../css/Player.css";
 
 const Player = props => {
     const backgroundStyles = {

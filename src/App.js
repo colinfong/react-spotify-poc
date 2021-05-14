@@ -1,27 +1,27 @@
 import React, { Component } from 'react';
 import logo from './logo.svg';
-import './App.css';
+import './css/App.css';
 import { render } from "@testing-library/react";
 
 import * as $ from "jquery";
-import Player from "./Player";
-import Playlist from "./Playlists"
-import Songs from './Songs';
+import Player from "./services/Player/Player";
+import Playlist from "./services/Playlists/Playlists"
+import Songs from './services/Songs/Songs';
 
 export const authEndpoint = 'https://accounts.spotify.com/authorize';
 
 /*
 TODO:
 -Inspect the .bind line
--Create general architecture
 -When do I actually need semicolons? function name?
 -camel vs snake case
 
+-have authentication on site only
 -Paginate on >20 playlist pages
   - I only get 21 playlists total?
 -Paginate on getArtist Tracks (max 100)
 -Paginate on playlist songs
-- Dry up URL promises
+-fail behavior
 */
 
 // Application client ID, redirect URI, and scopes
@@ -38,13 +38,17 @@ const urlHash = window.location.hash
   .split("&")
   .reduce(function(initial, item) {
     if (item) {
-      var parts = item.split("=");
+      let parts = item.split("=");
       initial[parts[0]] = decodeURIComponent(parts[1]);
     }
     return initial;
   }, {});
 
 window.location.hash = "";
+
+/*
+TODO: include song and playlist declaration in constructor
+*/
 
 class App extends Component {
   constructor() {
@@ -65,22 +69,42 @@ class App extends Component {
     };
   }
 
-  async componentDidMount() {
+/*
+TODO: have separate user and playlist services
+app lives in components directory, views directory, service directory
+1 entry point is app.js
+
+
+
+index.js - would be in top
+src/
+   -- components/
+   -- services/ (playlist, user, songs - contains their methods)
+   -- utils/
+   -- css/
+   -- index.js
+   -- index.css
+-- routes/
+-- queries/
+/tests/
+
+
+
+*/
+
+  async componentDidMount() { //Set state called multiple times - set it once, renders async & rerenders
     //Set token
     let _token = urlHash.access_token;
     if (_token) {
-      //Set token
       this.setState({
         token: _token
       })
     }
-    let userId, playlistIds, percentages
 
+    let userId, playlistIds, percentages
     this.getCurrentlyPlaying(_token)
     userId = await this.getCurUserID(_token)
     playlistIds = await this.getUserPlaylistIds(_token, userId)
-    // console.log(playlistIds)
-    // console.log(this.getPlaylistsNames(playlistIds))
     
     this.setState({
       playlists: this.getPlaylistsNames(playlistIds)
@@ -91,6 +115,26 @@ class App extends Component {
       songs: this.printTrackPop(this.orderTracksByPop(percentages[0]["items"]))
     })
   }
+
+/*ajax - before send, replace w/ auth header property 
+headers: {'Authorization: `Bearer ${token}`}
+ajax returns a promise-like object, you don't need to build
+https://api.jquery.com/jquery.ajax/
+
+getCurrentUser() {
+   return $.ajax({
+        url: "https://api.spotify.com/v1/me",
+        headers: {'Authorization: `Bearer ${token}`}
+   }).then(data) {
+        return data.id;
+   }).fail(error => {})
+}
+havgin the then here makes the caller not need to worry about await
+because we expect this method to return user instead of promise
+
+we don't need to return promise b/c ajax returns its own
+
+*/
 
   // Get the user's id for playlists
   getCurrentUser(token) {
@@ -175,10 +219,10 @@ class App extends Component {
   // Use 50 artist ids max in an API call
   getArtists(token, artistIds) {
     return new Promise((resolve,reject) => {
-      var url = 'https://api.spotify.com/v1/artists?ids='
-      var comp = ""
+      let url = 'https://api.spotify.com/v1/artists?ids='
+      let comp = ""
       console.log(artistIds)
-      for (var i = 0; i < artistIds.length; i++) {
+      for (let i = 0; i < artistIds.length; i++) {
         if (i === 0) {
           comp = artistIds[i]
         } else {
@@ -217,7 +261,7 @@ class App extends Component {
   genreCount(artists) {
     let genres = new Map()
     let count = 0
-    for (var artist of artists) {
+    for (let artist of artists) {
       const iter = artist["genres"].values()
       let result = iter.next()
       while (!result.done) {
@@ -235,8 +279,8 @@ class App extends Component {
   // Take a list of tracks and get their top artist's genres
   async getArtistGenres(token, tracks) {
     console.log(tracks.length)
-    var limit = 50
-    var artistBatches = [[]]
+    let limit = 50
+    let artistBatches = [[]]
     tracks.forEach((track) => {
       if(artistBatches[limit/50 - 1].length == 50) {
         limit += 50
@@ -308,6 +352,8 @@ class App extends Component {
     return orderedPop
   } 
 
+
+  /* redundant , can be called outside */
   async getCurUserID(token) {
     let userId
     userId = await this.getCurrentUser(token)
@@ -343,8 +389,19 @@ class App extends Component {
     });
   }
 
+  //header typically has css files and such, not render, pull out
+  //playlists variable doesn't need brackets
 
+/*
+component based arch: view is as simple as possible
+anchor tag could be abstracted out to leave view super simple, can build it in state
+  is in render code
+  single source of auth changes (maintainable)
 
+render link in a conditional if
+
+data no data - you know it in the state
+*/
   render() {
     return ( 
       <div className="App">
