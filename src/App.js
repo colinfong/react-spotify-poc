@@ -22,6 +22,7 @@ TODO:
 -Paginate on getArtist Tracks (max 100)
 -Paginate on playlist songs
 -fail behavior
+-ajax -> fetch, jquery is done away with with fetch or axios
 */
 
 // Application client ID, redirect URI, and scopes
@@ -46,9 +47,7 @@ const urlHash = window.location.hash
 
 window.location.hash = "";
 
-/*
-TODO: include song and playlist declaration in constructor
-*/
+//TODO: Clean state & no_data -> has_data. Delete constructor if not calling member function to initialize state. Functional components - functions without state (replace playlists and songs)
 
 class App extends Component {
   constructor() {
@@ -66,6 +65,8 @@ class App extends Component {
       is_playing: "Paused",
       progress_ms: 0,
       no_data: false,
+      playlists: null,
+      songs: null
     };
   }
 
@@ -74,13 +75,19 @@ TODO: have separate user and playlist services
 app lives in components directory, views directory, service directory
 1 entry point is app.js
 
+component cares about action dispatch
 
+getThirdCallData(firstCallData, secondCallData) {
+ return thirdAPICall(transform(firstCallData, secondCallData))
+} // but put transform above return w/o explicit call
+transform can go inside component if it's not used in much places
+transform lives in app.js
 
 index.js - would be in top
 src/
-   -- components/
-   -- services/ (playlist, user, songs - contains their methods)
-   -- utils/
+   -- components/ (playlist, user, songs - contains their methods)
+   -- services/ transformation of data
+   -- utils/ getting data
    -- css/
    -- index.js
    -- index.css
@@ -92,70 +99,37 @@ src/
 
 */
 
-  async componentDidMount() { //Set state called multiple times - set it once, renders async & rerenders
+  async componentDidMount() {
     //Set token
-    let _token = urlHash.access_token;
-    if (_token) {
-      this.setState({
-        token: _token
-      })
-    }
-
+    let _token = urlHash.access_token
     let userId, playlistIds, percentages
-    this.getCurrentlyPlaying(_token)
-    userId = await this.getCurUserID(_token)
-    playlistIds = await this.getUserPlaylistIds(_token, userId)
-    
-    this.setState({
-      playlists: this.getPlaylistsNames(playlistIds)
-    })
 
+    this.getCurrentlyPlaying(_token)
+    userId = await this.getCurrentUserID(_token)
+    playlistIds = await this.getUserPlaylistIds(_token, userId)
     percentages = await this.getAllPlaylistTracks(_token, playlistIds)
+
     this.setState({
+      token: _token,
+      playlists: this.getPlaylistsNames(playlistIds),
       songs: this.printTrackPop(this.orderTracksByPop(percentages[0]["items"]))
     })
   }
 
-/*ajax - before send, replace w/ auth header property 
-headers: {'Authorization: `Bearer ${token}`}
-ajax returns a promise-like object, you don't need to build
-https://api.jquery.com/jquery.ajax/
-
-getCurrentUser() {
-   return $.ajax({
-        url: "https://api.spotify.com/v1/me",
-        headers: {'Authorization: `Bearer ${token}`}
-   }).then(data) {
-        return data.id;
-   }).fail(error => {})
-}
-havgin the then here makes the caller not need to worry about await
-because we expect this method to return user instead of promise
-
-we don't need to return promise b/c ajax returns its own
-
-*/
+//TODO: log error, npm install prettier & or ESLint -> format ;s
 
   // Get the user's id for playlists
-  getCurrentUser(token) {
-    return new Promise((resolve,reject) => {
-      $.ajax({
+  getCurrentUserID(token) {
+    return $.ajax({
         url: "https://api.spotify.com/v1/me",
-        type: "GET",
-        beforeSend: (xhr) => {
-          xhr.setRequestHeader("Authorization", "Bearer " + token);
-        },
-        success: (data) => {
-          resolve(data.id)
-        },
-        error: function (error) {
-          reject(error)
-        }
-      })
-    })
+        headers: {'Authorization': `Bearer ${token}`}
+    }).then(data => data.id)
+    .fail(error => {})
   }
 
+  //TODO: fix this eajaz like the one above
   // Use the user's id to get their playlists
+  //
   getUserPlaylistIds(token, userId) {
     return new Promise((resolve,reject) => {
       $.ajax({
@@ -188,7 +162,6 @@ we don't need to return promise b/c ajax returns its own
           xhr.setRequestHeader("Authorization", "Bearer " + token);
         },
         success: (data) => {
-          // console.log(data)
           resolve(data)
         },
         error: (error) => {
@@ -216,6 +189,7 @@ we don't need to return promise b/c ajax returns its own
       })
     })
   }
+
   // Use 50 artist ids max in an API call
   getArtists(token, artistIds) {
     return new Promise((resolve,reject) => {
@@ -246,8 +220,7 @@ we don't need to return promise b/c ajax returns its own
     })
   }
 
-
-  // Takes a list of map of genres and counts and turns those cunts into percentages
+  // Takes a list of map of genres and counts and turns those counts into percentages
   genrePercentage(genres, count) {
     console.log(count)
     for (let [key, value] of genres) {
@@ -256,8 +229,7 @@ we don't need to return promise b/c ajax returns its own
     return genres
   }
 
-  // Takes a list of artists and extracts their associated genres
-  // into a map
+  // Takes a list of artists and extracts their associated genres into a map
   genreCount(artists) {
     let genres = new Map()
     let count = 0
@@ -315,14 +287,11 @@ we don't need to return promise b/c ajax returns its own
       })
     )
   }
-  
+  //TODO: remove playlist maker logic + make code one line
 
   getAllPlaylistTracks(token, playlistIds) {
     return Promise.all(
-      playlistIds.map(async (playlist) =>{
-        const playlistId = playlist["id"]
-        return await this.getPlaylistTracks(token, playlistId)
-      })
+      playlistIds.map(playlist => this.getPlaylistTracks(token, playlist["id"]))
     )
   }
 
@@ -339,7 +308,8 @@ we don't need to return promise b/c ajax returns its own
   }
 
   orderTracksByPop(tracks) {
-    tracks.sort(this.comparePop)
+    const sorted_tracks = [...tracks]
+    sorted_tracks.sort(this.comparePop)
     return tracks
   }
 
@@ -349,18 +319,8 @@ we don't need to return promise b/c ajax returns its own
     tracks.forEach(function (value) {
       orderedPop.push([value["track"]["name"], value["track"]["popularity"]])
     })
-    return orderedPop
+    return orderedPop //return tracks.map instead of foreach and push
   } 
-
-
-  /* redundant , can be called outside */
-  async getCurUserID(token) {
-    let userId
-    userId = await this.getCurrentUser(token)
-    return userId
-  }
-
-
 
   getCurrentlyPlaying(token) {
     // Make a call using the token
@@ -402,6 +362,15 @@ render link in a conditional if
 
 data no data - you know it in the state
 */
+
+//TODO: make authendpoint a function and call it here
+
+/*
+Routing for login vs playlist & song page
+Playlist & songs could go together
+redux manages app state
+view persistence - global store redux
+*/
   render() {
     return ( 
       <div className="App">
@@ -416,16 +385,12 @@ data no data - you know it in the state
             Login to spotify
           </a>
         )}
-        {
           <Playlist
             playlists={this.state.playlists}
           />
-        }
-        {
           <Songs
             songs={this.state.songs}
           />
-        }
         {this.state.no_data && (
           <p>
             You need to be playing a song on Spotify for something to appear here.
